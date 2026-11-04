@@ -1,0 +1,15 @@
+# Python and local environments
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Jupyter temporary files
+.ipynb_checkpoints/
+
+# Local secrets and operating system files
+.env
+.env.*
+!.env.example
+.DS_Store
+Thumbs.db
