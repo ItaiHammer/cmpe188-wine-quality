@@ -73,7 +73,6 @@ def prepare_data():
         scaler, feature_names
     )
 
-
 # Run preprocessing when this file is executed directly
 if __name__ == "__main__":
     prepare_data()
