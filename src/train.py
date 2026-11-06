@@ -11,9 +11,10 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.svm import SVC
 
-# preprocessing
+# src
 from src.preprocessing import prepare_data
 from src.save_model import save_model, validate_experiment_name
+from src.evaluate import evaluate_experiment
 
 
 console = Console(highlight=False)
@@ -133,7 +134,7 @@ def main():
 
     console.rule(Text("Training", style="white"), style="white")
     console.print(f"Experiment Name: {args.name}  |  Model: {args.model}", style="dim", markup=False)
-    console.print("[1/3] Preparing data...", style="white", markup=False)
+    console.print("[1/4] Preparing data...", style="white", markup=False)
 
     # ignoring stdout from preprocessing
     with redirect_stdout(StringIO()):
@@ -147,7 +148,7 @@ def main():
         style="dim",
     )
 
-    console.print(f"[2/3] Training {args.model}...", style="white", markup=False)
+    console.print(f"[2/4] Training {args.model}...", style="white", markup=False)
     with console.status("Fitting model...", spinner="dots", spinner_style="white"):
         trained_model = train_model(model, X_train, y_train)
     console.print("      Training complete.", style="green")
@@ -159,7 +160,7 @@ def main():
     }
 
     try:
-        console.print("[3/3] Saving experiment...", style="white", markup=False)
+        console.print("[3/4] Saving experiment...", style="white", markup=False)
 
         # from src/save_model.py
         experiment_dir = save_model(
@@ -171,6 +172,12 @@ def main():
         )
     except OSError as error:
         parser.error(str(error))
+
+    console.print("[4/4] Evaluating on validation set...", style="white", markup=False)
+    try:
+        evaluate_experiment(experiment_dir)
+    except (OSError, ValueError, KeyError) as error:
+        parser.error(f"Model saved to {experiment_dir}, but validation evaluation failed: {error}")
 
     console.rule("Complete", style="green")
     console.print("Experiment folder:", Text(str(experiment_dir), style="blue"), style="white")
