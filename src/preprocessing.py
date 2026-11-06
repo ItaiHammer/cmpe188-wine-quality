@@ -31,29 +31,47 @@ def prepare_data():
     x = df.drop(columns=[target])
     y = df[target]
 
-    # Split data into training and testing sets
-    x_train, x_test, y_train, y_test = train_test_split(
-        x,
-        y,
+  
+    # First split: 80% temporary data, 20% test
+    x_temp, x_test, y_temp, y_test = train_test_split(
+        x, y,
         test_size=0.2,
         random_state=42,
         stratify=y
     )
 
+    # Second split: 60% train, 20% validation
+    x_train, x_val, y_train, y_val = train_test_split(
+        x_temp, y_temp,
+        test_size=0.25,
+        random_state=42,
+        stratify=y_temp
+    )
+
     print("Training rows:", len(x_train))
+    print("Validation rows:", len(x_val))
     print("Testing rows:", len(x_test))
 
-    # Scale the features
+    # Scale features using training data only
     scaler = StandardScaler()
 
     x_train_scaled = scaler.fit_transform(x_train)
+    x_val_scaled = scaler.transform(x_val)
     x_test_scaled = scaler.transform(x_test)
 
     print("Scaling completed!")
     print("Scaled training shape:", x_train_scaled.shape)
+    print("Scaled validation shape:", x_val_scaled.shape)
     print("Scaled testing shape:", x_test_scaled.shape)
 
-    return x_train_scaled, x_test_scaled, y_train, y_test
+    # Save feature names
+    feature_names = x.columns.tolist()
+
+    return (
+        x_train_scaled, x_val_scaled, x_test_scaled,
+        y_train, y_val, y_test,
+        scaler, feature_names
+    )
 
 
 # Run preprocessing when this file is executed directly
