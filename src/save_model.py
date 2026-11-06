@@ -27,8 +27,8 @@ def validate_experiment_name(name):
         raise FileExistsError(f"Experiment '{name}' already exists. Choose a new name.")
 
 
-def save_readme(recipe, split_indices, experiment_dir):
-    """Write a readable summary of the saved experiment."""
+def save_readme(recipe, split_indices, experiment_dir, validation_metrics=None, test_metrics=None):
+    """Write an experiment summary with any available validation and test results."""
     parameter_rows = "\n".join(
         f"| `{name}` | `{json.dumps(value)}` |"
         for name, value in recipe["params"].items()
@@ -41,6 +41,41 @@ def save_readme(recipe, split_indices, experiment_dir):
         f"| {index} | `{feature}` |"
         for index, feature in enumerate(recipe["feature_names"], start=1)
     )
+    evaluation_files = ""
+    evaluation_sections = ""
+
+    # keeping results from either split when the README is updated
+    for split, metrics in (("validation", validation_metrics), ("test", test_metrics)):
+        metrics_path = Path(f"{experiment_dir}/{split}_metrics.json")
+        if metrics is None and metrics_path.exists():
+            metrics = json.loads(metrics_path.read_text(encoding="utf-8"))
+
+        if metrics is None:
+            continue
+
+        score_rows = "\n".join(
+            f"| {name.title()} | {metrics[name]:.4f} |"
+            for name in ("accuracy", "precision", "recall", "f1")
+        )
+        matrix = metrics["confusion_matrix"]
+        evaluation_files += f"├── {split}_metrics.json    # {split} scores and confusion matrix\n"
+        evaluation_sections += f'''## 📈 {split.title()} Results
+
+Evaluated **{metrics["rows"]:,} {split} rows**. Positive class: `good_quality = 1`.
+
+| Metric | Score |
+| :----- | ----: |
+{score_rows}
+
+| Actual / predicted | 0 | 1 |
+| :----------------- | -: | -: |
+| 0 | {matrix[0][0]} | {matrix[0][1]} |
+| 1 | {matrix[1][0]} | {matrix[1][1]} |
+
+Undefined precision, recall, or F1 is reported as 0.
+Full results are saved in [{split}_metrics.json]({split}_metrics.json).
+
+'''
     readme = f'''# 🍷 {experiment_dir.name}
 
 **Wine Quality Classification**
@@ -91,9 +126,10 @@ Reuse `scaler.joblib` when preparing inputs for this model.
 ├── scaler.joblib         # fitted scaler
 ├── recipe.json           # feature names and model/scaler settings
 ├── split_indices.json    # train, validation, and test row indexes
-└── README.md             # this summary
+{evaluation_files}└── README.md             # this summary
 ```
 
+{evaluation_sections}
 '''
     readme_path = Path(f"{experiment_dir}/README.md")
     readme_path.write_text(readme, encoding="utf-8")

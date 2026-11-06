@@ -22,7 +22,7 @@ The project's goal is to create a model to predict whether a wine is good qualit
 | ≥ 6           | `good_quality = 1` |
 | < 6           | `good_quality = 0` |
 
-> **Current stage:** Model training and saving are implemented. Evaluation is next.
+> **Current stage:** Model training, saving, and evaluation are implemented.
 
 ## 📊 Dataset
 
@@ -42,6 +42,7 @@ The binary label is already supplied; the original `quality` score is absent. Ke
 │   └── README.md                  # ideas and observations about the data
 ├── notebooks/                     # Google Colab notebooks (empty for now)
 ├── src/                           # reusable Python code
+│   ├── evaluate.py                # model evaluation
 │   ├── preprocessing.py           # data preparation
 │   ├── save_model.py              # save models, recipes, and split indexes
 │   ├── tests/                     # tests for src files
@@ -129,20 +130,48 @@ local_experiments/
     ├── scaler.joblib              # fitted scaler
     ├── recipe.json                # feature names and model/scaler settings
     ├── split_indices.json         # train, validation, and test row indexes
+    ├── validation_metrics.json    # validation scores and confusion matrix
+    ├── test_metrics.json          # added after evaluation with --split test
     └── README.md                  # folder summary
 ```
 
-Existing local run names are not overwritten. Evaluation is next.
-
 The `local_experiments/` folder is ignored by git. Copy experiment folders into `experiments/` if you want to keep and commit them.
+
+## 📊 Evaluation
+
+Run from the repository root:
+
+| Flag           | Required | Values                            |
+| :------------- | :------: | :-------------------------------- |
+| `--experiment` |   Yes    | Saved experiment folder.          |
+| `--split`      |    No    | `validation` (default) or `test`. |
+
+**Validation**
+
+Ex:
+
+```bash
+python -m src.evaluate --experiment local_experiments/logistic-v1
+```
+
+**Final test evaluation**
+
+Ex:
+
+```bash
+python -m src.evaluate --experiment local_experiments/logistic-v1 --split test
+```
+
+Evaluation reports accuracy, precision, recall, F1, and a confusion matrix. Each split has its own json file containing its metrics, and both json files get added to the experiment README.
 
 ## 🧪 Tests
 
 **Test files**
 
-| File                                                 | Tests                                                        |
-| :--------------------------------------------------- | :----------------------------------------------------------- |
-| [`test_save_model.py`](src/tests/test_save_model.py) | Model saving, overwrite protection, and run name validation. |
+| File                                                 | Tests                                                           |
+| :--------------------------------------------------- | :-------------------------------------------------------------- |
+| [`test_save_model.py`](src/tests/test_save_model.py) | Model saving, overwrite protection, and run name validation.    |
+| [`test_evaluate.py`](src/tests/test_evaluate.py)     | Metrics, validation/test row loading, and saved-run evaluation. |
 
 **Run tests**
 
